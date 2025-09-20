@@ -173,7 +173,7 @@ create_configs() {
     N8N_ENCRYPTION_KEY=$(openssl rand -base64 64)
     
     # Создание docker-compose.yml
-    cat > ${INSTALL_DIR}/docker-compose.yml << EOF
+    cat > ${INSTALL_DIR}/docker-compose.yml << 'EOFCOMPOSE'
 version: '3.8'
 
 services:
@@ -182,34 +182,34 @@ services:
     container_name: traefik
     restart: unless-stopped
     command:
-      - --api.dashboard=true
-      - --api.insecure=false
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-      - --certificatesresolvers.letsencrypt.acme.email=admin@${DOMAIN}
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
-      - --log.level=INFO
-      - --accesslog=true
-      - --providers.file.directory=/etc/traefik/dynamic
-      - --providers.file.watch=true
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@3digitit.ru"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/letsencrypt:/letsencrypt
-      - ./traefik/config:/etc/traefik/dynamic
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/letsencrypt:/letsencrypt"
+      - "./traefik/config:/etc/traefik/dynamic"
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.traefik.rule=Host(\`traefik.${DOMAIN}\`)
-      - traefik.http.routers.traefik.entrypoints=websecure
-      - traefik.http.routers.traefik.tls.certresolver=letsencrypt
-      - traefik.http.routers.traefik.service=api@internal
-      - traefik.http.routers.traefik.middlewares=auth
-      - traefik.http.middlewares.auth.basicauth.users=admin:\$\$2y\$\$10\$\$3QK9Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.3digitit.ru`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$2y$$10$$K1p3D8A9L2wXz5Y7B4C6N8.Q2E7F9G0H1I2J3K4L5M6N7O8P9Q0R1S2"
     networks:
       - n8n-network
 
@@ -269,10 +269,10 @@ services:
       QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
       
       # General
-      N8N_HOST: n8n.${DOMAIN}
+      N8N_HOST: n8n.3digitit.ru
       N8N_PORT: 5678
       N8N_PROTOCOL: https
-      WEBHOOK_URL: https://n8n.${DOMAIN}
+      WEBHOOK_URL: https://n8n.3digitit.ru
       
       # Security
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
@@ -303,14 +303,14 @@ services:
       redis:
         condition: service_healthy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.n8n.rule=Host(\`n8n.${DOMAIN}\`)
-      - traefik.http.routers.n8n.entrypoints=websecure
-      - traefik.http.routers.n8n.tls.certresolver=letsencrypt
-      - traefik.http.services.n8n.loadbalancer.server.port=5678
-      - traefik.http.routers.n8n.middlewares=n8n-headers
-      - traefik.http.middlewares.n8n-headers.headers.customrequestheaders.X-Forwarded-Proto=https
-      - traefik.http.middlewares.n8n-headers.headers.customrequestheaders.X-Forwarded-For=\$\$remote_addr
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.3digitit.ru`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+      - "traefik.http.routers.n8n.middlewares=n8n-headers"
+      - "traefik.http.middlewares.n8n-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.n8n-headers.headers.customrequestheaders.X-Forwarded-For=$$remote_addr"
     networks:
       - n8n-network
 
@@ -325,7 +325,12 @@ volumes:
 networks:
   n8n-network:
     driver: bridge
-EOF
+EOFCOMPOSE
+
+    # Замена переменных в docker-compose.yml
+    sed -i "s/\${POSTGRES_PASSWORD}/${POSTGRES_PASSWORD}/g" ${INSTALL_DIR}/docker-compose.yml
+    sed -i "s/\${REDIS_PASSWORD}/${REDIS_PASSWORD}/g" ${INSTALL_DIR}/docker-compose.yml
+    sed -i "s/\${N8N_ENCRYPTION_KEY}/${N8N_ENCRYPTION_KEY}/g" ${INSTALL_DIR}/docker-compose.yml
     
     # Создание .env файла
     cat > ${INSTALL_DIR}/.env << EOF
